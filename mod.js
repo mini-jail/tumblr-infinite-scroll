@@ -1,21 +1,19 @@
 /**
- * @type {Set<string>}
+ * @type {Map<string, HTMLElement>}
  */
-const postIdSet = new Set()
+const postMap = new Map()
 const debounceValue = 50
 const containerQuery = "body main"
 const postQuery = "article[data-post]"
 const parser = new DOMParser()
 const parse = parser.parseFromString.bind(parser)
-const isPostsPage = location.pathname === "/" ||
-  location.pathname.startsWith("/page/")
 let page = location.pathname.match(/\/page\/(\d+)/)?.[1] || 1
 let isLoading = false
 /**
  * @type {HTMLElement | null}
  */
 let postsContainer = null
-let preventLoading = false
+let maxPage = Infinity
 
 /**
  * @template T
@@ -53,40 +51,55 @@ function getPostsContainer() {
   return postsContainer
 }
 
-if (isPostsPage) {
+if (location.pathname === "/") {
   addEventListener(
     "scroll",
     debounced(async () => {
-      if (isLoading || preventLoading) {
+      if (isLoading || page === maxPage) {
         return
       }
+
       isLoading = true
       const { scrollHeight, scrollTop } = document.documentElement
-      if ((scrollTop / scrollHeight) > 0.75) {
-        for (const post of document.querySelectorAll(postQuery)) {
-          postIdSet.add(post.dataset.post)
-        }
-        try {
-          const posts = await getPosts(++page)
-          if (posts.length === 0) {
-            page--
-            preventLoading = true
-          } else {
-            const postsContainer = getPostsContainer()
-            for (const post of posts) {
-              if (postIdSet.has(post.dataset.post)) {
-                continue
-              }
-              postsContainer.appendChild(post)
-            }
-          }
-        } catch (error) {
-          console.error(
-            `create an issue for this error on "https://github.com/mini-jail/tumblr-infinite-scroll/issues"`,
-            error,
-          )
-        }
+      const scrolled = scrollTop / scrollHeight
+      const mode = scrolled > 0.7 ? 1 : scrolled < 0.3 ? -1 : 0
+
+      if (mode === 0) {
+        isLoading = false
+        return
       }
+
+      for (const elt of document.querySelectorAll(postQuery)) {
+        postMap.set(elt.dataset.post, elt)
+      }
+
+      try {
+        page = page + mode
+        const posts = await getPosts(page)
+        if (posts.length === 0) {
+          maxPage = page
+        } else {
+          const postsContainer = getPostsContainer()
+          for (const elt of posts) {
+            const id = elt.dataset.post
+            if (postMap.has(id)) {
+              if (postMap.get(id).isEqualNode(elt) === false) {
+                postsContainer.replaceChild(elt, postMap.get(id))
+              }
+              continue
+            }
+            mode === 1
+              ? postsContainer.append(elt)
+              : postsContainer.prepend(elt)
+          }
+        }
+      } catch (error) {
+        console.error(
+          `create an issue for this error on "https://github.com/mini-jail/tumblr-infinite-scroll/issues"`,
+          error,
+        )
+      }
+
       isLoading = false
     }, debounceValue),
   )
