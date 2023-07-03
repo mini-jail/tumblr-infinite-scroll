@@ -2,7 +2,7 @@
  * @type {Set<string>}
  */
 const postIdSet = new Set()
-const debounceValue = 500
+const debounceValue = 1000
 const containerQuery = "body main"
 const postQuery = "article[data-post]"
 const parser = new DOMParser()
@@ -15,6 +15,7 @@ let isLoading = false
  * @type {HTMLElement | null}
  */
 let postsContainer = null
+let preventLoading = false
 
 /**
  * @template T
@@ -56,11 +57,10 @@ if (isPostsPage) {
   addEventListener(
     "scroll",
     debounced(async () => {
-      if (isLoading) {
+      if (isLoading || preventLoading) {
         return
       }
       isLoading = true
-      document.documentElement.setAttribute("data-is-loading", "true")
       const { scrollHeight, scrollTop, clientHeight } = document.documentElement
       const atBottom = Math.abs(scrollHeight - clientHeight - scrollTop) < 1
       if (atBottom) {
@@ -69,8 +69,10 @@ if (isPostsPage) {
         }
         try {
           const posts = await getPosts(++page)
-          posts.length === 0 && page--
-          if (posts.length) {
+          if (posts.length === 0) {
+            page--
+            preventLoading = true
+          } else {
             const postsContainer = getPostsContainer()
             for (const post of posts) {
               if (postIdSet.has(post.dataset.post)) {
@@ -87,7 +89,6 @@ if (isPostsPage) {
         }
       }
       isLoading = false
-      document.documentElement.setAttribute("data-is-loading", "false")
     }, debounceValue),
   )
 }
