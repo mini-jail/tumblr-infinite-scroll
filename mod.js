@@ -61,9 +61,8 @@ if (isPostsPage) {
         return
       }
       isLoading = true
-      const { scrollHeight, scrollTop, clientHeight } = document.documentElement
-      const atBottom = Math.abs(scrollHeight - clientHeight - scrollTop) < 1
-      if (atBottom) {
+      const { scrollHeight, scrollTop } = document.documentElement
+      if ((scrollTop / scrollHeight) > 0.75) {
         for (const post of document.querySelectorAll(postQuery)) {
           postIdSet.add(post.dataset.post)
         }
