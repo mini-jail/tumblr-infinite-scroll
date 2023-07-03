@@ -60,7 +60,7 @@ if (isPostsPage) {
         return
       }
       isLoading = true
-      document.documentElement.dataset = isLoading
+      document.documentElement.setAttribute("data-is-loading", "true")
       const { scrollHeight, scrollTop, clientHeight } = document.documentElement
       const atBottom = Math.abs(scrollHeight - clientHeight - scrollTop) < 1
       if (atBottom) {
@@ -87,7 +87,7 @@ if (isPostsPage) {
         }
       }
       isLoading = false
-      document.documentElement.dataset = isLoading
+      document.documentElement.setAttribute("data-is-loading", "false")
     }, debounceValue),
   )
 }
