@@ -3,7 +3,6 @@
  */
 const postIdSet = new Set()
 const debounceValue = 500
-const loadingClass = "is-loading"
 const containerQuery = "body main"
 const postQuery = "article[data-post]"
 const parser = new DOMParser()
@@ -61,9 +60,7 @@ if (isPostsPage) {
         return
       }
       isLoading = true
-      if (loadingClass !== null) {
-        document.documentElement.classList.add(loadingClass)
-      }
+      document.documentElement.dataset = isLoading
       const { scrollHeight, scrollTop, clientHeight } = document.documentElement
       const atBottom = Math.abs(scrollHeight - clientHeight - scrollTop) < 1
       if (atBottom) {
@@ -90,9 +87,7 @@ if (isPostsPage) {
         }
       }
       isLoading = false
-      if (loadingClass !== null) {
-        document.documentElement.classList.remove(loadingClass)
-      }
+      document.documentElement.dataset = isLoading
     }, debounceValue),
   )
 }
