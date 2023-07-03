@@ -2,7 +2,7 @@
  * @type {Set<string>}
  */
 const postIdSet = new Set()
-const debounceValue = 1000
+const debounceValue = 50
 const containerQuery = "body main"
 const postQuery = "article[data-post]"
 const parser = new DOMParser()
