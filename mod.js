@@ -55,28 +55,26 @@ if (location.pathname === "/" || location.pathname.startsWith("/page/")) {
       const { scrollHeight, scrollTop, clientHeight } = document.documentElement
       const atBottom = Math.abs(scrollHeight - clientHeight - scrollTop) < 1
       if (atBottom) {
-        const articleContainer = document.querySelector("body main")
         for (const article of document.querySelectorAll(articleQuery)) {
           postIdSet.add(article.dataset.post)
         }
         try {
           const articles = await getArticles(++page)
-          if (articles.length === 0) {
-            page--
-          }
-          for (const article of articles) {
-            const id = article.dataset.post
-            if (postIdSet.has(id)) {
-              const node = document.querySelector(`article[data-post="${id}"]`)
-              if (article.isEqualNode(node) === false) {
-                node.replaceWith(article)
+          articles.length === 0 && page--
+          if (articles.length) {
+            const articleContainer = document.querySelector("body main")
+            for (const article of articles) {
+              if (postIdSet.has(article.dataset.post)) {
+                continue
               }
-              continue
+              articleContainer.appendChild(article)
             }
-            articleContainer.appendChild(article)
           }
         } catch (error) {
-          console.error(error, "notify mini-jail about this")
+          console.error(
+            `create an issue for this error on "https://github.com/mini-jail/tumblr-infinite-scroll/issues"`,
+            error,
+          )
         }
       }
       isLoading = false
