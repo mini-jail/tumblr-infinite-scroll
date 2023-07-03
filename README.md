@@ -36,7 +36,6 @@ mine is like that
 you will find this at the top. if you know basic DOM and JS...you know what to do x)
 
 ```javascript
-const loadingClass = "is-loading"
 const containerQuery = "body main"
 const postQuery = "article[data-post]"
 ```
