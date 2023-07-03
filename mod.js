@@ -1,22 +1,21 @@
 /**
- * to tumblr:
- * i am sorry if i am violating against some rules :(
- * please remove it if you need to.
- *
- * motivation:
- * i wanted to implement a working infinite-scroll function
- * without firing "fetch" or any other request function too often.
- */
-
-/**
  * @type {Set<string>}
  */
 const postIdSet = new Set()
-const articleQuery = "article[data-post]"
+const debounceValue = 500
+const loadingClass = "is-loading"
+const containerQuery = "body main"
+const postQuery = "article[data-post]"
 const parser = new DOMParser()
 const parse = parser.parseFromString.bind(parser)
+const isPostsPage = location.pathname === "/" ||
+  location.pathname.startsWith("/page/")
 let page = location.pathname.match(/\/page\/(\d+)/)?.[1] || 1
 let isLoading = false
+/**
+ * @type {HTMLElement | null}
+ */
+let postsContainer = null
 
 /**
  * @template T
@@ -37,13 +36,24 @@ function debounced(callback, timeout) {
  * @param {number} page
  * @returns {Promise<Iterable<HTMLElement>>}
  */
-async function getArticles(page) {
+async function getPosts(page) {
   const response = await fetch(`/page/${page}`)
   const text = await response.text()
-  return parse(text, "text/html").querySelectorAll(articleQuery)
+  return parse(text, "text/html").querySelectorAll(postQuery)
 }
 
-if (location.pathname === "/" || location.pathname.startsWith("/page/")) {
+/**
+ * @returns {HTMLElement}
+ */
+function getPostsContainer() {
+  if (postsContainer) {
+    return postsContainer
+  }
+  postsContainer = document.querySelector(containerQuery)
+  return postsContainer
+}
+
+if (isPostsPage) {
   addEventListener(
     "scroll",
     debounced(async () => {
@@ -51,23 +61,25 @@ if (location.pathname === "/" || location.pathname.startsWith("/page/")) {
         return
       }
       isLoading = true
-      document.documentElement.classList.add("is-loading")
+      if (loadingClass !== null) {
+        document.documentElement.classList.add(loadingClass)
+      }
       const { scrollHeight, scrollTop, clientHeight } = document.documentElement
       const atBottom = Math.abs(scrollHeight - clientHeight - scrollTop) < 1
       if (atBottom) {
-        for (const article of document.querySelectorAll(articleQuery)) {
-          postIdSet.add(article.dataset.post)
+        for (const post of document.querySelectorAll(postQuery)) {
+          postIdSet.add(post.dataset.post)
         }
         try {
-          const articles = await getArticles(++page)
-          articles.length === 0 && page--
-          if (articles.length) {
-            const articleContainer = document.querySelector("body main")
-            for (const article of articles) {
-              if (postIdSet.has(article.dataset.post)) {
+          const posts = await getPosts(++page)
+          posts.length === 0 && page--
+          if (posts.length) {
+            const postsContainer = getPostsContainer()
+            for (const post of posts) {
+              if (postIdSet.has(post.dataset.post)) {
                 continue
               }
-              articleContainer.appendChild(article)
+              postsContainer.appendChild(post)
             }
           }
         } catch (error) {
@@ -78,7 +90,9 @@ if (location.pathname === "/" || location.pathname.startsWith("/page/")) {
         }
       }
       isLoading = false
-      document.documentElement.classList.remove("is-loading")
-    }, 500),
+      if (loadingClass !== null) {
+        document.documentElement.classList.remove(loadingClass)
+      }
+    }, debounceValue),
   )
 }
