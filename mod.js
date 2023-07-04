@@ -7,7 +7,7 @@ const containerQuery = "body main"
 const postQuery = "article[data-post]"
 const parser = new DOMParser()
 const parse = parser.parseFromString.bind(parser)
-let page = location.pathname.match(/\/page\/(\d+)/)?.[1] || 1
+let page = 1
 let isLoading = false
 /**
  * @type {HTMLElement | null}
