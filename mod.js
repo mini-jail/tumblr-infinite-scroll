@@ -16,10 +16,17 @@ let postsContainer = null
 let maxPage = Infinity
 
 /**
- * @template T
- * @param {T & (...args: any[]) => any} callback
- * @param {number} timeout
- * @returns {T}
+ * @template FN, T
+ * @typedef {{
+ *   (...args: Parameters<FN>): ReturnType<FN>
+ * }} DebouncedCallback
+ */
+
+/**
+ * @template FN, T
+ * @param {FN & (...args: any[]) => any} callback
+ * @param {T & number} timeout
+ * @returns {DebouncedCallback<FN, T>}
  */
 function debounced(callback, timeout) {
   let timeHandle = undefined
@@ -56,47 +63,47 @@ function getPostsContainer() {
   return postsContainer
 }
 
-if (location.pathname === "/") {
-  addEventListener(
-    "scroll",
-    debounced(async () => {
-      if (isLoading || page === maxPage) {
-        return
-      }
+const debouncedScrollListener = debounced(async () => {
+  if (isLoading || page === maxPage) {
+    return
+  }
 
-      isLoading = true
-      const { scrollHeight, scrollTop } = document.documentElement
-      const scrolled = scrollTop / scrollHeight
-      const mode = scrolled > 0.6 ? 1 : scrolled < 0.3 ? -1 : 0
+  isLoading = true
+  const { scrollHeight, scrollTop } = document.documentElement
+  const scrolled = scrollTop / scrollHeight
+  const mode = scrolled > 0.6 ? 1 : scrolled < 0.3 ? -1 : 0
 
-      if (mode === 0 || (mode === -1 && page === 1)) {
-        isLoading = false
-        return
-      }
+  if (mode === 0 || (mode === -1 && page === 1)) {
+    isLoading = false
+    return
+  }
 
-      for (const elt of document.querySelectorAll(postQuery)) {
-        postMap.set(elt.dataset.post, elt)
-      }
+  for (const elt of document.querySelectorAll(postQuery)) {
+    postMap.set(elt.dataset.post, elt)
+  }
 
-      page = page + mode
-      const posts = await getPosts(page)
-      if (posts.length === 0) {
-        maxPage = page
-      } else {
-        const postsContainer = getPostsContainer()
-        for (const elt of posts) {
-          const id = elt.dataset.post
-          if (postMap.has(id)) {
-            if (postMap.get(id).isEqualNode(elt) === false) {
-              postsContainer.replaceChild(elt, postMap.get(id))
-            }
-            continue
-          }
-          mode === 1 ? postsContainer.append(elt) : postsContainer.prepend(elt)
+  page = page + mode
+  const posts = await getPosts(page)
+  if (posts.length === 0) {
+    maxPage = page
+  } else {
+    const postsContainer = getPostsContainer()
+    for (const elt of posts) {
+      const id = elt.dataset.post
+      if (postMap.has(id)) {
+        if (postMap.get(id).isEqualNode(elt) === false) {
+          postsContainer.replaceChild(elt, postMap.get(id))
         }
+        continue
       }
+      mode === 1 ? postsContainer.append(elt) : postsContainer.prepend(elt)
+    }
+  }
 
-      isLoading = false
-    }, debounceValue),
-  )
+  isLoading = false
+}, debounceValue)
+
+// only enabled on main-page
+if (location.pathname === "/") {
+  addEventListener("scroll", debouncedScrollListener)
 }
