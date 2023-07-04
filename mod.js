@@ -79,6 +79,7 @@ const debouncedScrollListener = debounced(async () => {
   }
 
   for (const elt of document.querySelectorAll(postQuery)) {
+    elt.setAttribute("data-page", page)
     postMap.set(elt.dataset.post, elt)
   }
 
@@ -90,6 +91,7 @@ const debouncedScrollListener = debounced(async () => {
     const postsContainer = getPostsContainer()
     for (const elt of posts) {
       const id = elt.dataset.post
+      elt.setAttribute("data-page", page)
       if (postMap.has(id)) {
         if (postMap.get(id).isEqualNode(elt) === false) {
           postsContainer.replaceChild(elt, postMap.get(id))
