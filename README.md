@@ -13,7 +13,7 @@ mine is like that
 ```html
 ...
 <head>
-  <script src="https://static.tumblr.com/...the-script.js"></script>
+  <script src="https://static.tumblr.com/...infinite-scroll.js"></script>
 </head>
 ...
 <main>
