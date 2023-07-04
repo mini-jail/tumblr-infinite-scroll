@@ -2,7 +2,7 @@
  * @type {Map<string, HTMLElement>}
  */
 const postMap = new Map()
-const debounceValue = 50
+const debounceValue = 500
 const containerQuery = "body main"
 const postQuery = "article[data-post]"
 const parser = new DOMParser()
@@ -35,9 +35,14 @@ function debounced(callback, timeout) {
  * @returns {Promise<Iterable<HTMLElement>>}
  */
 async function getPosts(page) {
-  const response = await fetch(`/page/${page}`)
-  const text = await response.text()
-  return parse(text, "text/html").querySelectorAll(postQuery)
+  try {
+    const response = await fetch(`/page/${page}`)
+    const text = await response.text()
+    return parse(text, "text/html").querySelectorAll(postQuery)
+  } catch (error) {
+    console.error(`getPosts(${page})`, error)
+    return []
+  }
 }
 
 /**
@@ -62,9 +67,9 @@ if (location.pathname === "/") {
       isLoading = true
       const { scrollHeight, scrollTop } = document.documentElement
       const scrolled = scrollTop / scrollHeight
-      const mode = scrolled > 0.7 ? 1 : scrolled < 0.3 ? -1 : 0
+      const mode = scrolled > 0.6 ? 1 : scrolled < 0.3 ? -1 : 0
 
-      if (mode === 0) {
+      if (mode === 0 || (mode === -1 && page === 1)) {
         isLoading = false
         return
       }
@@ -73,31 +78,22 @@ if (location.pathname === "/") {
         postMap.set(elt.dataset.post, elt)
       }
 
-      try {
-        page = page + mode
-        const posts = await getPosts(page)
-        if (posts.length === 0) {
-          maxPage = page
-        } else {
-          const postsContainer = getPostsContainer()
-          for (const elt of posts) {
-            const id = elt.dataset.post
-            if (postMap.has(id)) {
-              if (postMap.get(id).isEqualNode(elt) === false) {
-                postsContainer.replaceChild(elt, postMap.get(id))
-              }
-              continue
+      page = page + mode
+      const posts = await getPosts(page)
+      if (posts.length === 0) {
+        maxPage = page
+      } else {
+        const postsContainer = getPostsContainer()
+        for (const elt of posts) {
+          const id = elt.dataset.post
+          if (postMap.has(id)) {
+            if (postMap.get(id).isEqualNode(elt) === false) {
+              postsContainer.replaceChild(elt, postMap.get(id))
             }
-            mode === 1
-              ? postsContainer.append(elt)
-              : postsContainer.prepend(elt)
+            continue
           }
+          mode === 1 ? postsContainer.append(elt) : postsContainer.prepend(elt)
         }
-      } catch (error) {
-        console.error(
-          `create an issue for this error on "https://github.com/mini-jail/tumblr-infinite-scroll/issues"`,
-          error,
-        )
       }
 
       isLoading = false
