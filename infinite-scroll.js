@@ -2,7 +2,9 @@
  * @type {Map<string, HTMLElement>}
  */
 const postMap = new Map()
-const debounceValue = 500
+const debounceValue = 250
+const modeUp = 0.5
+const modeDown = 0.3
 const containerQuery = "body main"
 const postQuery = "article[data-post]"
 const parser = new DOMParser()
@@ -71,7 +73,7 @@ const debouncedScrollListener = debounced(async () => {
   isLoading = true
   const { scrollHeight, scrollTop } = document.documentElement
   const scrolled = scrollTop / scrollHeight
-  const mode = scrolled > 0.6 ? 1 : scrolled < 0.3 ? -1 : 0
+  const mode = scrolled > modeUp ? 1 : scrolled < modeDown ? -1 : 0
 
   if (mode === 0 || (mode === -1 && page === 1)) {
     isLoading = false
